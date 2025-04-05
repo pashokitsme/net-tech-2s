@@ -1,0 +1,31 @@
+- name: Install deps
+  hosts: all
+  become: yes
+  gather_facts: no
+  vars:
+    python_version: 3
+
+  pre_tasks:
+    - name: Update package repository
+      raw: |
+        apt-get update
+      args:
+        executable: /bin/bash
+
+    - name: Install python{{ python_version }}
+      raw: |
+        apt-get install -y python{{ python_version }}
+      args:
+        executable: /bin/bash
+
+  tasks:
+    - name: Gather installed python version
+      raw: |
+        python{{ python_version }} --version
+      args:
+        executable: /bin/bash
+      register: result
+
+    - name: Display python version
+      debug:
+        msg: "{{ result.stdout.strip() }}"
