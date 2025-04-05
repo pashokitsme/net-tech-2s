@@ -1,0 +1,42 @@
+services:
+  srv01:
+    build: .
+    container_name: srv01
+    hostname: srv01
+    volumes:
+      - ./keys/srv01.pub:/root/.ssh/authorized_keys
+      # - ./data:/etc/ansible/IT-Planet
+    networks:
+      - net01
+    ports:
+      - 6001:22
+
+  client01:
+    build: .
+    container_name: client01
+    hostname: client01
+    volumes:
+      - ./keys/client01.pub:/root/.ssh/authorized_keys
+    networks:
+      - net01
+    ports:
+      - 6002:22
+
+  client02:
+    build: .
+    container_name: client02
+    hostname: client02
+    volumes:
+      - ./keys/client02.pub:/root/.ssh/authorized_keys
+    networks:
+      - net01
+    ports:
+      - 6003:22
+
+networks:
+  net01:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.10.0.0/24
+          gateway: 10.10.0.1
