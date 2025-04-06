@@ -126,6 +126,7 @@
       ansible.builtin.package:
         name:
           - dhcp-server
+          - dhcp-client
         state: latest
 
     - name: Stop DHCP server
@@ -154,3 +155,48 @@
       ansible.builtin.command:
         cmd: dhcpd
       when: dhcpd_conf.rc == 0
+
+- name: Install DHCP client
+  hosts: clients
+  gather_facts: no
+  tasks:
+    - name: Install DHCP client
+      ansible.builtin.package:
+        name:
+          - dhcp-client
+        state: latest
+
+    - name: Retrieve interface name
+      ansible.builtin.shell:
+        cmd: ip -o addr show | awk '/10.10.0.*brd 10.10.0.255/{print $2}'
+      register: selected_interface_result
+      changed_when: false
+      failed_when: selected_interface_result.stdout.strip() == ''
+
+    - name: Set interface fact
+      ansible.builtin.set_fact:
+        selected_interface: '{{ selected_interface_result.stdout.strip() }}'
+
+    - name: Display interface
+      ansible.builtin.debug:
+        msg: 'Selected interface: {{ selected_interface }}'
+
+    - name: Release {{ selected_interface }} addresses
+      ansible.builtin.shell:
+        cmd: |
+          dhclient -r {{ selected_interface }}
+          ip addr flush dev {{ selected_interface }}
+
+    - name: Run DHCP client
+      ansible.builtin.command:
+        cmd: dhclient {{ selected_interface }}
+
+    - name: Gather claimed IP addresses
+      ansible.builtin.shell:
+        cmd: ip -br -f inet addr show {{ selected_interface }} | awk '{print $3}'
+      register: claimed_addresses
+      changed_when: false
+
+    - name: Display claimed addresses
+      ansible.builtin.debug:
+        msg: 'Claimed addresses: {{ claimed_addresses.stdout.strip() }}'
