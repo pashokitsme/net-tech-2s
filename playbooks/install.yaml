@@ -4,28 +4,107 @@
   gather_facts: no
   vars:
     python_version: 3
+    executable: /bin/bash
 
   pre_tasks:
+    - name: Check if python{{ python_version }} is installed
+      raw: |
+        python{{ python_version }} --version
+      args:
+        executable: '{{ executable }}'
+      register: python_installed
+      failed_when: false
+      changed_when: false
+
     - name: Update package repository
       raw: |
         apt-get update
       args:
-        executable: /bin/bash
+        executable: '{{ executable }}'
+      when: 'python_installed.rc'
 
     - name: Install python{{ python_version }}
       raw: |
         apt-get install -y python{{ python_version }}
       args:
-        executable: /bin/bash
+        executable: '{{ executable }}'
+      when: 'python_installed.rc'
 
   tasks:
     - name: Gather installed python version
       raw: |
         python{{ python_version }} --version
       args:
-        executable: /bin/bash
+        executable: '{{ executable }}'
       register: result
+      changed_when: false
 
     - name: Display python version
       debug:
-        msg: "{{ result.stdout.strip() }}"
+        msg: '{{ result.stdout.strip() }}'
+
+- name: Install packages
+  hosts: all
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Install helper packages
+      ansible.builtin.package:
+        name:
+          - curl
+          - apt-https
+        state: latest
+
+- name: Setup web-server
+  hosts: servers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Check if Angie is installed
+      ansible.builtin.command:
+        cmd: angie -v
+      register: angie_installed
+      failed_when: false
+      changed_when: false
+
+    - name: Download Angie keys & add repository
+      ansible.builtin.shell:
+        cmd: |
+          mkdir -p /etc/ssl/angie && \
+          curl -o /etc/ssl/angie/angie-signing.gpg https://angie.software/keys/angie-signing.gpg && \
+          gpg --no-default-keyring --keyring /usr/lib/alt-gpgkeys/pubring.gpg --import /etc/ssl/angie/angie-signing.gpg && \
+
+          echo 'simple-key "angie" {
+            Fingerprint "EB8EAF3D4EF1B1ECF34865A2617AB978CB849A76";
+            Name "Angie (Signing Key) <devops@tech.wbsrv.ru>";
+          }' | tee /etc/apt/vendors.list.d/angie.list > /dev/null && \
+
+          echo "rpm [angie] https://download.angie.software/angie/altlinux/10/ $(uname -m) main" \
+          | tee /etc/apt/sources.list.d/angie.list > /dev/null
+      when: angie_installed.rc
+
+    - name: Install packages
+      ansible.builtin.package:
+        name:
+          - angie
+        update_cache: true
+        state: latest
+      when: angie_installed.rc
+
+    - name: Test Angie conf
+      ansible.builtin.command:
+        cmd: angie -t
+      register: angie_conf
+      changed_when: false
+
+    - name: Restart Angie
+      ansible.builtin.shell:
+        cmd: |
+          if [ -f /run/angie.pid ]; then
+            angie -s stop
+          fi
+
+          angie
+      when: angie_conf.rc == 0
