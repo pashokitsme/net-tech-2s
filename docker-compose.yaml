@@ -1,6 +1,7 @@
 x-networks: &networks
   - net-internal
   - net-external
+
 services:
   srv01:
     build: .
