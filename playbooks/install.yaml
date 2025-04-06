@@ -1,4 +1,4 @@
-- name: Install deps
+- name: Install python
   hosts: all
   become: yes
   gather_facts: no
@@ -59,7 +59,7 @@
 - name: Setup web-server
   hosts: servers
   become: yes
-  gather_facts: yes
+  gather_facts: no
 
   tasks:
     - name: Check if Angie is installed
@@ -99,12 +99,58 @@
       register: angie_conf
       changed_when: false
 
-    - name: Restart Angie
+    - name: Stop Angie
       ansible.builtin.shell:
         cmd: |
           if [ -f /run/angie.pid ]; then
             angie -s stop
+            exit 0
           fi
-
-          angie
+          exit 1
+      register: angie_stop
       when: angie_conf.rc == 0
+      changed_when: angie_stop.rc == 0
+      failed_when: angie_stop.rc > 1
+
+    - name: Start Angie
+      ansible.builtin.command:
+        cmd: angie
+      when: angie_conf.rc == 0
+
+- name: Install DCHP server
+  hosts: servers
+  gather_facts: no
+
+  tasks:
+    - name: Install DHCP server
+      ansible.builtin.package:
+        name:
+          - dhcp-server
+        state: latest
+
+    - name: Stop DHCP server
+      ansible.builtin.command:
+        cmd: pkill -F /run/dhcpd.pid
+      register: dhcpd_stop
+      failed_when: dhcpd_stop.rc > 1
+      changed_when: dhcpd_stop.rc == 0
+
+    - name: Configure DHCP server
+      ansible.builtin.template:
+        src: dhcpd.conf
+        dest: /etc/dhcp/dhcpd.conf
+        owner: root
+        group: root
+        mode: '0640'
+
+    - name: Test DHCP server conf
+      ansible.builtin.command:
+        cmd: dhcpd -t
+      become: yes
+      register: dhcpd_conf
+      changed_when: false
+
+    - name: Start DHCP server
+      ansible.builtin.command:
+        cmd: dhcpd
+      when: dhcpd_conf.rc == 0
