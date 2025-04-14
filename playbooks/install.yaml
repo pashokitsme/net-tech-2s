@@ -209,3 +209,34 @@
     - name: Display claimed addresses
       ansible.builtin.debug:
         msg: 'Claimed addresses: {{ claimed_addresses.stdout.strip() }}'
+
+- name: Install DNS server
+  hosts: servers
+  gather_facts: false
+
+  tasks:
+    - name: Install DNS server
+      ansible.builtin.package:
+        name:
+          - bind
+        state: present_not_latest
+
+    - name: Configure DNS server
+      ansible.builtin.template:
+        src: named.conf
+        dest: /etc/bind/named.conf
+        owner: root
+        group: root
+        mode: '0640'
+
+    - name: Test DNS server conf
+      ansible.builtin.command:
+        cmd: named-checkconf /etc/bind/named.conf
+      register: named_conf
+      changed_when: false
+
+    - name: Start DNS server
+      ansible.builtin.command:
+        cmd: named
+      when: named_conf.rc == 0
+      changed_when: named_conf.rc == 0
