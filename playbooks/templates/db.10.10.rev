@@ -1,0 +1,13 @@
+$TTL 86400
+@       IN      SOA     ns.server.lan. admin.internal. (
+                        2023040101      ; Serial
+                        3600            ; Refresh
+                        1800            ; Retry
+                        604800          ; Expire
+                        86400 )         ; Minimum TTL
+
+; Name servers
+@       IN      NS      ns.server.internal.
+
+; PTR records
+2.0     IN      PTR     ns.server.internal. 
