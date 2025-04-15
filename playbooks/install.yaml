@@ -282,6 +282,27 @@
       changed_when: named_conf.rc == 0
       failed_when: named_start.rc != 0
 
+- name: Configure DNS client
+  hosts: clients
+  gather_facts: false
+
+  tasks:
+    - name: Copy resolv.conf
+      ansible.builtin.template:
+        src: resolv.conf
+        dest: /tmp/resolv.conf
+        owner: root
+        group: root
+        mode: '0640'
+
+    - name: Configure resolv.conf
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          cat /tmp/resolv.conf > /etc/resolv.conf
+          rm /tmp/resolv.conf
+      changed_when: true
+
 - name: Test DNS server
   hosts: clients
   gather_facts: false
@@ -296,19 +317,19 @@
     - name: Test DNS server
       ansible.builtin.command:
         cmd: nslookup {{ item.host }} {{ item.dns }}
-      register: nslookup_result
-      changed_when: false
-      notify: Display nslookup result
       loop:
         - host: ya.ru
           dns: 8.8.8.8
         - host: server.internal
           dns: 10.10.0.2
+        - host: server.internal
+          dns: ''
+      changed_when: false
+      register: nslookup_result
 
-  handlers:
     - name: Display nslookup result
       ansible.builtin.debug:
-        msg: 'nslookup output: {{ nslookup_result.stdout.strip() }}'
+        msg: "{{ nslookup_result.results | map(attribute='stdout') | list }}"
 
 - name: Configure iptables
   hosts: all

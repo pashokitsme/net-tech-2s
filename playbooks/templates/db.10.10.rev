@@ -1,5 +1,5 @@
 $TTL 86400
-@       IN      SOA     ns.server.lan. admin.internal. (
+@       IN      SOA     ns.internal. admin.internal. (
                         2023040101      ; Serial
                         3600            ; Refresh
                         1800            ; Retry
@@ -7,7 +7,7 @@ $TTL 86400
                         86400 )         ; Minimum TTL
 
 ; Name servers
-@       IN      NS      ns.server.internal.
+@       IN      NS      ns.internal.
 
 ; PTR records
-2.0     IN      PTR     ns.server.internal. 
+2.0     IN      PTR     ns.internal. 
