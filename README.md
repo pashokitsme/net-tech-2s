@@ -676,4 +676,24 @@ COMMIT
 
 # Выполнение
 
-##
+`docker compose up`
+
+![](./pics/docker-compose-up.webp)
+
+При попытке пинга, Ansible падает с ошибкой, поскольку Python не установлен
+
+`uv run ansible -i inventory.yaml -m ping all`
+
+![](./pics/ping-failed.webp)
+
+Запуск установки
+
+`uv run ansible-playbook -i inventory.yaml playbooks/install.yaml`
+
+![](./pics/install.webp)
+
+![](./pics/install-complete.webp)
+
+В ходе выполнения playbook, он автоматически проверяет работу DNS сервера и выводит назначенные ip. Такие ip он назначил
+
+![](./pics/assigned-ips.webp)
