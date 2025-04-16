@@ -1,4 +1,4 @@
-Репозиторий на GitHub: https://github.com/pashokitsme/net-tech-2s
+Репозиторий на GitHub: [https://github.com/pashokitsme/net-tech-2s](https://github.com/pashokitsme/net-tech-2s)
 
 Этот репозиторий, как и этот отчёт - второй этап [braim.org/network-contest](https://challenge.braim.org/landing/network_contest)
 
@@ -7,6 +7,8 @@
 В ходе выполнения использовался пакетный (проектный) менеджер uv. Поэтому для вызова команд используется uv run <command>.
 
 В качестве машин использовались три docker-контейнера с базовым образом alt linux, а также установленным openssh и подготовленными ключами.
+
+Контроллер доменов не был реализован (соответственно, и ввод клиентов в него)
 
 # TL;DR
 
