@@ -330,8 +330,11 @@ subnet 10.10.0.0 netmask 255.255.255.0 {
         cmd: |
           set -o pipefail
           INTERFACE=$(ip -o addr show | awk '/10.10.0.*brd 10.10.0.255/{print $2}')
+          ip addr flush dev $INTERFACE
           ip addr add 10.10.0.2/24 dev $INTERFACE
           ip link set $INTERFACE up
+      async: 1
+      poll: 0
       changed_when: true
 ```
 
@@ -434,13 +437,11 @@ $TTL 86400
 
 ### named.conf
 
-В `forwarders` установлен 0.0.0.0, поскольку не было необходимости получать внешние доменные имена.
-
 ```
 options {
     directory "/etc/bind";
     allow-query { any; };
-    forwarders { 0.0.0.0; };
+    forwarders { 1.1.1.1; };
     recursion yes;
     dnssec-validation no;
 };
@@ -591,6 +592,10 @@ nameserver 10.10.0.2
 -A INPUT -p icmp -j ACCEPT 
 -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# http
+-A INPUT -p tcp --dport 80 -j ACCEPT
+-A INPUT -p tcp --dport 443 -j ACCEPT
 
 # dns
 -A INPUT -p tcp --dport 53 -j ACCEPT

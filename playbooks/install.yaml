@@ -277,6 +277,13 @@
       register: named_conf
       changed_when: false
 
+    - name: Kill DNS server
+      ansible.builtin.command:
+        cmd: killall -9 named
+      register: named_kill
+      failed_when: named_kill.rc > 1
+      changed_when: named_kill.rc == 0
+
     - name: Start DNS server
       ansible.builtin.command:
         cmd: named
@@ -352,3 +359,17 @@
       ansible.builtin.command:
         cmd: iptables-restore /etc/sysconfig/iptables
       changed_when: true
+
+- name: Test DNS server
+  hosts: clients
+  gather_facts: false
+
+  tasks:
+    - name: Test DNS server
+      ansible.builtin.uri:
+        url: http://server.internal
+        method: GET
+        return_content: false
+      register: curl_result
+      when: true
+      changed_when: false
