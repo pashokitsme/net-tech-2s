@@ -10,4 +10,4 @@ $TTL 86400
 @       IN      NS      ns.internal.
 
 ; PTR records
-2.0     IN      PTR     ns.internal. 
+2.0     IN      PTR     ns.internal.

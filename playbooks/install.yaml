@@ -52,6 +52,7 @@
         name:
           - curl
           - apt-https
+          - bind-utils
         state: present_not_latest
 
 - name: Setup web-server
@@ -124,7 +125,7 @@
         method: GET
       changed_when: false
 
-- name: Install DCHP server
+- name: Install DHCP server
   hosts: servers
   gather_facts: false
 
@@ -169,8 +170,11 @@
         cmd: |
           set -o pipefail
           INTERFACE=$(ip -o addr show | awk '/10.10.0.*brd 10.10.0.255/{print $2}')
+          ip addr flush dev $INTERFACE
           ip addr add 10.10.0.2/24 dev $INTERFACE
           ip link set $INTERFACE up
+      async: 1
+      poll: 0
       changed_when: true
 
 - name: Install DHCP client
@@ -234,7 +238,6 @@
       ansible.builtin.package:
         name:
           - bind
-          - bind-utils
         state: present_not_latest
 
     - name: Create bind user
@@ -308,12 +311,6 @@
   gather_facts: false
 
   tasks:
-    - name: Install nslookup
-      ansible.builtin.package:
-        name:
-          - bind-utils
-        state: present_not_latest
-
     - name: Test DNS server
       ansible.builtin.command:
         cmd: nslookup {{ item.host }} {{ item.dns }}

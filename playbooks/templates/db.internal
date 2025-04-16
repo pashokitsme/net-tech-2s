@@ -11,5 +11,5 @@ $TTL 86400
 
 ; A records
 @       IN      A       10.10.0.2
-ns      IN      A       10.10.0.2 
-server  IN      A       10.10.0.2
+ns      IN      A       10.10.0.2
+server  IN      CNAME   ns.internal.
